@@ -1,20 +1,21 @@
-# Scraping Tools
+# Browser Tools
 
 Minimal CDP tools for collaborative site exploration.
 
 ## Start Chrome
 
 ```bash
-./src/scraping/tools/start.ts
+./start.ts
+./start.ts --profile
 ```
 
-Start Chrome on `:9222` with user's profile (cookies, logins).
+Start Chrome on `:9222` with remote debugging enabled. Use `--profile` flag to copy your default Chrome profile (cookies, logins). Without the flag, starts with a fresh profile.
 
 ## Navigate
 
 ```bash
-./src/scraping/tools/nav.ts https://example.com
-./src/scraping/tools/nav.ts https://example.com --new
+./nav.ts https://example.com
+./nav.ts https://example.com --new
 ```
 
 Navigate current tab or open new tab.
@@ -22,9 +23,9 @@ Navigate current tab or open new tab.
 ## Execute Code
 
 ```bash
-./src/scraping/tools/x.js 'document.title'
-./src/scraping/tools/x.js 'document.querySelectorAll("a").length'
-./src/scraping/tools/x.js 'Array.from(document.querySelectorAll("a")).map(a => ({text: a.textContent.trim(), href: a.href}))'
+./x.js 'document.title'
+./x.js 'document.querySelectorAll("a").length'
+./x.js 'Array.from(document.querySelectorAll("a")).map(a => ({text: a.textContent.trim(), href: a.href}))'
 ```
 
 Execute arbitrary JavaScript in the active tab. Code runs in async context.
@@ -32,8 +33,8 @@ Execute arbitrary JavaScript in the active tab. Code runs in async context.
 ## Ask User to Pick Element
 
 ```bash
-./src/scraping/tools/x.js 'await pick()'
-./src/scraping/tools/x.js 'await pick("Click the article title")'
+./x.js 'await pick()'
+./x.js 'await pick("Click the article title")'
 ```
 
 Show overlay and ask user to click an element. Returns:

@@ -3,6 +3,18 @@
 import { exec, execSync } from "node:child_process";
 import puppeteer from "puppeteer-core";
 
+const useProfile = process.argv[2] === "--profile";
+
+if (process.argv[2] && process.argv[2] !== "--profile") {
+	console.log("Usage: start.ts [--profile]");
+	console.log("\nOptions:");
+	console.log("  --profile  Copy your default Chrome profile (cookies, logins)");
+	console.log("\nExamples:");
+	console.log("  start.ts            # Start with fresh profile");
+	console.log("  start.ts --profile  # Start with your Chrome profile");
+	process.exit(1);
+}
+
 // Kill existing Chrome
 try {
 	execSync("killall 'Google Chrome'", { stdio: "ignore" });
@@ -11,12 +23,16 @@ try {
 // Wait a bit for processes to fully die
 await new Promise((r) => setTimeout(r, 1000));
 
-// Sync profile with rsync (much faster on subsequent runs)
+// Setup profile directory
 execSync("mkdir -p ~/.cache/scraping", { stdio: "ignore" });
-execSync(
-	'rsync -a --delete "/Users/badlogic/Library/Application Support/Google/Chrome/" ~/.cache/scraping/',
-	{ stdio: "pipe" },
-);
+
+if (useProfile) {
+	// Sync profile with rsync (much faster on subsequent runs)
+	execSync(
+		'rsync -a --delete "/Users/badlogic/Library/Application Support/Google/Chrome/" ~/.cache/scraping/',
+		{ stdio: "pipe" },
+	);
+}
 
 // Start Chrome in background
 exec(
@@ -45,4 +61,4 @@ if (!connected) {
 	process.exit(1);
 }
 
-console.log("✓ Chrome started on :9222 with your profile");
+console.log(`✓ Chrome started on :9222${useProfile ? " with your profile" : ""}`);
