@@ -20,6 +20,14 @@ Start Chrome on `:9222` with remote debugging enabled. Use `--profile` flag to c
 
 Navigate current tab or open new tab.
 
+## Take Screenshot
+
+```bash
+./screenshot.ts
+```
+
+Take a screenshot of the current viewport and save it to a temporary file. Returns the file path.
+
 ## Execute Code
 
 ```bash
