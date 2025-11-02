@@ -20,14 +20,6 @@ Start Chrome on `:9222` with remote debugging.
 
 Navigate current tab or open new tab.
 
-## Screenshot
-
-```bash
-./screenshot.js
-```
-
-Screenshot current viewport, returns temp file path.
-
 ## Evaluate JavaScript
 
 ```bash
@@ -36,6 +28,14 @@ Screenshot current viewport, returns temp file path.
 ```
 
 Execute JavaScript in active tab (async context).
+
+## Screenshot
+
+```bash
+./screenshot.js
+```
+
+Screenshot current viewport, returns temp file path.
 
 ## Pick Elements
 
