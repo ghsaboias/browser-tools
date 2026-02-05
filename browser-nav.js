@@ -23,7 +23,15 @@ if (newTab) {
 	await p.goto(url, { waitUntil: "domcontentloaded" });
 	console.log("✓ Opened:", url);
 } else {
-	const p = (await b.pages()).at(-1);
+	// Use targets() instead of pages() to avoid hanging with many tabs
+	const pageTargets = (await b.targets()).filter(t => t.type() === 'page');
+	if (pageTargets.length === 0) {
+		console.error("✗ No page targets found");
+		await b.disconnect();
+		process.exit(1);
+	}
+	// Get the most recent page target and convert to Page
+	const p = await pageTargets.at(-1).page();
 	await p.goto(url, { waitUntil: "domcontentloaded" });
 	console.log("✓ Navigated to:", url);
 }
