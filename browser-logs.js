@@ -1,94 +1,47 @@
 #!/usr/bin/env node
+// Capture console logs from a tab via CDP Runtime.consoleAPICalled.
+import { run } from './lib/client.js';
 
-import puppeteer from "puppeteer-core";
+const args = process.argv.slice(2);
+const target = args.find(a => a.startsWith('-t='))?.slice(3) || null;
+const reload = args.includes('--reload');
+const durArg = args.find(a => a.startsWith('--duration='));
+const duration = durArg ? parseInt(durArg.split('=')[1]) * 1000 : 5000;
 
-const reload = process.argv.includes('--reload');
+// We use raw CDP to enable Runtime domain and listen for events.
+// The daemon handles this via a special 'logs' command.
+// For now, we do it via eval — inject capture + collect.
 
-const b = await puppeteer.connect({
-	browserURL: "http://localhost:9222",
-	defaultViewport: null,
-});
-
-const pageTargets = (await b.targets()).filter(t => t.type() === 'page');
-if (pageTargets.length === 0) {
-	console.error("✗ No active tab found");
-	await b.disconnect();
-	process.exit(1);
-}
-const p = await pageTargets.at(-1).page();
-
-// Inject log capture script into the current page
-await p.evaluate(() => {
-	if (!window.__capturedLogs) {
-		window.__capturedLogs = [];
-		const originalLog = console.log;
-		const originalError = console.error;
-		const originalWarn = console.warn;
-		const originalInfo = console.info;
-
-		console.log = function(...args) {
-			window.__capturedLogs.push(`[LOG] ${args.map(a => typeof a === 'string' ? a : JSON.stringify(a)).join(' ')}`);
-			originalLog.apply(console, args);
-		};
-		console.error = function(...args) {
-			window.__capturedLogs.push(`[ERROR] ${args.map(a => typeof a === 'string' ? a : JSON.stringify(a)).join(' ')}`);
-			originalError.apply(console, args);
-		};
-		console.warn = function(...args) {
-			window.__capturedLogs.push(`[WARN] ${args.map(a => typeof a === 'string' ? a : JSON.stringify(a)).join(' ')}`);
-			originalWarn.apply(console, args);
-		};
-		console.info = function(...args) {
-			window.__capturedLogs.push(`[INFO] ${args.map(a => typeof a === 'string' ? a : JSON.stringify(a)).join(' ')}`);
-			originalInfo.apply(console, args);
-		};
-	}
-});
-
-// Also set up listener for real-time logs
-const logs = [];
-const messageHandler = msg => {
-	const text = msg.text();
-	logs.push(`[${msg.type().toUpperCase()}] ${text}`);
-};
-
-p.on('console', messageHandler);
-
-// Optionally reload to capture logs from page load
 if (reload) {
-	console.log('Reloading page to capture console logs...');
-	await p.reload({ waitUntil: 'domcontentloaded', timeout: 10000 });
+  await run(target, 'eval', ['location.reload()']);
+  await new Promise(r => setTimeout(r, 1000));
 }
 
-// Get duration from args or default to 5 seconds
-const durationArg = process.argv.find(arg => arg.startsWith('--duration='));
-const duration = durationArg ? parseInt(durationArg.split('=')[1]) * 1000 : 5000;
+// Inject capture
+await run(target, 'eval', [`
+  if (!window.__capturedLogs) {
+    window.__capturedLogs = [];
+    for (const level of ['log','error','warn','info']) {
+      const orig = console[level];
+      console[level] = function(...args) {
+        window.__capturedLogs.push('[' + level.toUpperCase() + '] ' + args.map(a => typeof a === 'string' ? a : JSON.stringify(a)).join(' '));
+        orig.apply(console, args);
+      };
+    }
+  }
+`]);
 
 console.log(`Capturing logs for ${duration / 1000}s...`);
-await new Promise(resolve => setTimeout(resolve, duration));
+await new Promise(r => setTimeout(r, duration));
 
-// Get logs from page context
-const pageLogs = await p.evaluate(() => window.__capturedLogs || []);
+const logs = await run(target, 'eval', ['JSON.stringify(window.__capturedLogs || [])']);
+const entries = JSON.parse(logs);
 
-// Combine both sources
-const allLogs = [...pageLogs, ...logs];
-
-// Print collected logs
-if (allLogs.length > 0) {
-	console.log("\n=== Browser Console Logs ===\n");
-	allLogs.forEach(log => console.log(log));
+if (entries.length > 0) {
+  console.log('\n=== Browser Console Logs ===\n');
+  entries.forEach(l => console.log(l));
 } else {
-	console.log("No console logs captured");
-	if (!reload) {
-		console.log("\nTip: Use --reload flag to reload the page and capture logs from page load:");
-		console.log("  browser-logs.js --reload");
-	}
+  console.log('No console logs captured.');
+  if (!reload) console.log('Tip: use --reload to capture from page load.');
 }
-
-console.log("\nUsage:");
-console.log("  browser-logs.js              # Capture logs for 5 seconds");
-console.log("  browser-logs.js --reload     # Reload page first, then capture for 5 seconds");
-console.log("  browser-logs.js --duration=10  # Capture logs for 10 seconds");
-console.log("  browser-logs.js --reload --duration=10");
-
-await b.disconnect();
+process.exit(0);

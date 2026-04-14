@@ -1,48 +1,29 @@
 #!/usr/bin/env node
+import { run } from './lib/client.js';
 
-import puppeteer from "puppeteer-core";
+const args = process.argv.slice(2);
+const target = args.find(a => a.startsWith('-t='))?.slice(3) || null;
+const code = args.filter(a => !a.startsWith('-t=')).join(' ');
 
-const code = process.argv.slice(2).join(" ");
 if (!code) {
-	console.log("Usage: browser-eval.js 'code'");
-	console.log("\nExamples:");
-	console.log('  browser-eval.js "document.title"');
-	console.log('  browser-eval.js "document.querySelectorAll(\'a\').length"');
-	process.exit(1);
+  console.log('Usage: browser-eval.js [-t=<tab>] <code>');
+  console.log('  -t=  Tab query (URL/title substring or index). Default: last tab.');
+  console.log('\nExamples:');
+  console.log('  browser-eval.js "document.title"');
+  console.log('  browser-eval.js -t=github "document.title"');
+  process.exit(1);
 }
 
-const b = await puppeteer.connect({
-	browserURL: "http://localhost:9222",
-	defaultViewport: null,
-});
-
-// Use targets() instead of pages() to avoid hanging with many tabs
-const pageTargets = (await b.targets()).filter(t => t.type() === 'page');
-if (pageTargets.length === 0) {
-	console.error("✗ No active tab found");
-	await b.disconnect();
-	process.exit(1);
+let result;
+try {
+  result = await run(target, 'eval', [code]);
+} catch (e) {
+  console.error(e.message);
+  process.exit(1);
 }
-const p = await pageTargets.at(-1).page();
-
-const result = await p.evaluate((c) => {
-	const AsyncFunction = (async () => {}).constructor;
-	return new AsyncFunction(c)();
-}, code);
-
-if (Array.isArray(result)) {
-	for (let i = 0; i < result.length; i++) {
-		if (i > 0) console.log("");
-		for (const [key, value] of Object.entries(result[i])) {
-			console.log(`${key}: ${value}`);
-		}
-	}
-} else if (typeof result === "object" && result !== null) {
-	for (const [key, value] of Object.entries(result)) {
-		console.log(`${key}: ${value}`);
-	}
+if (typeof result === 'object' && result !== null) {
+  console.log(JSON.stringify(result, null, 2));
 } else {
-	console.log(result);
+  console.log(result);
 }
-
-await b.disconnect();
+process.exit(0);
