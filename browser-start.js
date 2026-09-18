@@ -131,6 +131,9 @@ if (!headed) flags.push('--headless=new', '--disable-gpu', '--hide-scrollbars');
 // SwiftShader. Bot challenges (e.g. Vercel Security Checkpoint) fail without WebGL.
 if (headed && process.platform === 'linux') {
   flags.push('--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist');
+  // Headed Chromium exits when its last tab closes; other clients (michael-slack)
+  // open and close their own tabs, so keep the browser alive with zero windows.
+  flags.push('--keep-alive-for-test');
 }
 if (process.env.BROWSER_TOOLS_FLAGS) flags.push(...process.env.BROWSER_TOOLS_FLAGS.split(/\s+/).filter(Boolean));
 flags.push(url);
