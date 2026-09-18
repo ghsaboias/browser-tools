@@ -4,12 +4,13 @@
 // from a previous run is still alive, prints its info and exits.
 //
 // Usage:
-//   browser-start.js [--headed] [--foreground] [--kill] [<url>]
+//   browser-start.js [--headed] [--foreground] [--kill] [--check] [<url>]
 //
 // Profile lives in ~/.config/browser-tools/profile (persists cookies/logins).
 // Headless by default; --headed opens a window (Linux: DISPLAY, defaulting to :99 = the
 // browser-tools Xvfb service on the Pi).
 // --kill stops the browser started by this script.
+// --check exits 0 if the browser's DevTools socket answers, 1 otherwise (watchdog).
 // --foreground keeps this process alive until the browser exits and stops the
 //   browser on SIGTERM/SIGINT (for systemd Type=simple units).
 //
@@ -25,6 +26,7 @@ const args = process.argv.slice(2);
 const headed = args.includes('--headed');
 const kill = args.includes('--kill');
 const foreground = args.includes('--foreground');
+const check = args.includes('--check');
 const url = args.find(a => !a.startsWith('-')) || 'about:blank';
 const PID_FILE = resolve(PROFILE_DIR, 'browser-tools.pid');
 const LOG_FILE = resolve(PROFILE_DIR, 'browser.log');
@@ -93,6 +95,13 @@ async function stopBrowser() {
   }
   try { unlinkSync(PID_FILE); } catch {}
   try { unlinkSync(PROFILE_PORT_FILE); } catch {}
+}
+
+if (check) {
+  const info = readPortFile();
+  const ok = info ? await alive(info.wsUrl) : false;
+  console.log(ok ? `alive: ${info.wsUrl}` : 'dead: no DevTools socket');
+  process.exit(ok ? 0 : 1);
 }
 
 if (kill) {
