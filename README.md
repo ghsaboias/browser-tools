@@ -57,3 +57,11 @@ browser-cookies.js
 ```
 
 Display all cookies for the current tab including domain, path, httpOnly, and secure flags. Use this to debug authentication issues or inspect session state.
+
+## Instagram feed capture
+
+```bash
+./ig-capture.mjs -t=<tab> <handle> <since YYYY-MM-DD> <out.json>
+```
+
+Captures a profile's feed through the logged-in browser without calling Instagram's private API (that returns 429). It installs a fetch/XHR hook with `injecton` before navigating, so the first ~12 posts embedded in the page are not missed, then scrolls with real `mouseWheel` events through `raw` (`Input.dispatchMouseEvent`) at a human pace until 4 posts are older than `since` (up to 3 pinned posts can be old). Synthetic `scrollBy` loads nothing. The tab must be in a visible window: in a background tab Instagram stops loading. Open a separate window (`Target.createTarget` with `newWindow: true`) instead of reusing the user's tabs; scrolling it by hand speeds it up. Output items carry `code`, `taken_at`, `user`, `coauthors`, `caption` and `slides[]` with image and video URLs (signed CDN URLs, they expire).
