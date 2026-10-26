@@ -18,6 +18,8 @@ const SUM = `(() => { const m = new Map(); const best = v => { const c = (v?.ima
  return JSON.stringify([...m.values()]) })()`;
 await run(tab, 'injecton', [HOOK]);
 await run(tab, 'nav', [`https://www.instagram.com/${handle}/`]);
+// Numa aba em segundo plano o Brave não entrega o evento de roda e o Instagram para de carregar o feed.
+console.log(`Deixe a aba do Instagram (${handle}) na frente até o fim da captura.`);
 await sleep(4000);
 let last = 0, stale = 0, items = [];
 for (let i = 0; i < 200; i++) {
@@ -28,8 +30,9 @@ for (let i = 0; i < 200; i++) {
   // Até 3 posts fixados no topo podem ser antigos: só para quando 4 já passaram de --since.
   if (own.filter(p => p.taken_at < since).length >= 4) break;
   stale = items.length === last ? stale + 1 : 0; last = items.length;
-  if (stale >= 12) { console.log('\nparou de carregar'); break; }
-  await run(tab, 'raw', ['Input.dispatchMouseEvent', JSON.stringify({ type: 'mouseWheel', x: 700, y: 500, deltaX: 0, deltaY: 1800 })]);
+  if (stale >= 12) { console.log('\nparou de carregar: a aba está na frente?'); break; }
+  try { await run(tab, 'raw', ['Input.dispatchMouseEvent', JSON.stringify({ type: 'mouseWheel', x: 700, y: 500, deltaX: 0, deltaY: 1800 })]); }
+  catch (e) { console.log(`\n${e.message}: a aba saiu da frente. Traga a aba para a frente e rode de novo; nada foi gravado.`); process.exit(1); }
   await sleep(2200 + Math.random() * 1200);
 }
 fs.writeFileSync(out, JSON.stringify(items, null, 1));
