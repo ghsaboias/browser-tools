@@ -19,6 +19,7 @@ const SUM = `(() => { const m = new Map(); const best = v => { const c = (v?.ima
 await run(tab, 'injecton', [HOOK]);
 await run(tab, 'nav', [`https://www.instagram.com/${handle}/`]);
 // Numa aba em segundo plano o Brave não entrega o evento de roda e o Instagram para de carregar o feed.
+await run(tab, 'raw', ['Page.bringToFront', '{}']);
 console.log(`Deixe a aba do Instagram (${handle}) na frente até o fim da captura.`);
 await sleep(4000);
 let last = 0, stale = 0, items = [];
