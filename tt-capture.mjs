@@ -13,7 +13,7 @@ const HOOK = `(() => { if (window.__ttCap) return; window.__ttCap = []; const ke
  const of = window.fetch; window.fetch = async (...a) => { const r = await of(...a); try { const u = typeof a[0] === 'string' ? a[0] : a[0].url; r.clone().text().then(t => keep(u, t)) } catch(e){}; return r };
  const oo = XMLHttpRequest.prototype.open; XMLHttpRequest.prototype.open = function(m, u, ...r){ this.__u = u; return oo.call(this, m, u, ...r) };
  const os = XMLHttpRequest.prototype.send; XMLHttpRequest.prototype.send = function(...a){ this.addEventListener('load', () => { try { keep(this.__u, this.responseText) } catch(e){} }); return os.apply(this, a) }; })()`;
-const SUM = `(() => { const m = new Map(); for (const t of window.__ttCap || []) { try { for (const it of JSON.parse(t).itemList || []) m.set(it.id, { id: it.id, createTime: it.createTime, desc: it.desc, isPinned: !!it.isPinned, imagePost: !!it.imagePost, duration: it.video?.duration || 0 }) } catch (e) {} }
+const SUM = `(() => { const m = new Map(); for (const t of window.__ttCap || []) { try { for (const it of JSON.parse(t).itemList || []) m.set(it.id, { id: it.id, createTime: it.createTime, desc: it.desc, isPinned: !!(it.isPinned || it.isPinnedItem), imagePost: !!it.imagePost, duration: it.video?.duration || 0 }) } catch (e) {} }
  return JSON.stringify([...m.values()]) })()`;
 await run(tab, 'injecton', [HOOK]);
 await run(tab, 'nav', [`https://www.tiktok.com/@${handle}`]);
