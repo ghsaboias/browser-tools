@@ -14,7 +14,8 @@ const HOOK = `(() => { if (window.__ttCap) return; window.__ttCap = []; const ke
  const oo = XMLHttpRequest.prototype.open; XMLHttpRequest.prototype.open = function(m, u, ...r){ this.__u = u; return oo.call(this, m, u, ...r) };
  const os = XMLHttpRequest.prototype.send; XMLHttpRequest.prototype.send = function(...a){ this.addEventListener('load', () => { try { keep(this.__u, this.responseText) } catch(e){} }); return os.apply(this, a) }; })()`;
 const SUM = `(() => { const m = new Map(); for (const t of window.__ttCap || []) { try { for (const it of JSON.parse(t).itemList || []) m.set(it.id, { id: it.id, createTime: it.createTime, desc: it.desc, isPinned: !!(it.isPinned || it.isPinnedItem), imagePost: !!it.imagePost, duration: it.video?.duration || 0 }) } catch (e) {} }
- return JSON.stringify([...m.values()]) })()`;
+ let hasMore = null; for (const t of window.__ttCap || []) { try { const j = JSON.parse(t); if (typeof j.hasMore === 'boolean') hasMore = j.hasMore } catch (e) {} }
+ return JSON.stringify({ items: [...m.values()], hasMore }) })()`;
 await run(tab, 'injecton', [HOOK]);
 await run(tab, 'nav', [`https://www.tiktok.com/@${handle}`]);
 // Como no ig-capture: numa aba em segundo plano o Brave não entrega o evento de roda.
@@ -23,11 +24,13 @@ await sleep(5000);
 const sinceTs = Date.parse(since) / 1000;
 let last = 0, stale = 0, items = [];
 for (let i = 0; i < 300; i++) {
-  items = JSON.parse(await run(tab, 'eval', [SUM]));
+  const page = JSON.parse(await run(tab, 'eval', [SUM]));
+  items = page.items;
   const oldest = items.filter(p => !p.isPinned).map(p => p.createTime).sort()[0];
   process.stdout.write(`\r${handle}: ${items.length} posts, mais antigo ${oldest ? new Date(oldest * 1000).toISOString().slice(0, 10) : '-'}   `);
   // Post fixado no topo pode ser antigo: só para quando 4 não fixados já passaram de --since.
   if (items.filter(p => !p.isPinned && p.createTime < sinceTs).length >= 4) break;
+  if (page.hasMore === false) { console.log('\nfim do perfil'); break; }
   stale = items.length === last ? stale + 1 : 0; last = items.length;
   if (stale >= 12) { console.log('\nparou de carregar: a aba está na frente?'); break; }
   try { await run(tab, 'raw', ['Input.dispatchMouseEvent', JSON.stringify({ type: 'mouseWheel', x: 700, y: 500, deltaX: 0, deltaY: 1800 })]); }
