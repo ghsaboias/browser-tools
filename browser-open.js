@@ -3,12 +3,13 @@ import { openTab, run, shortId } from './lib/client.js';
 
 const args = process.argv.slice(2);
 const noWait = args.includes('--no-wait');
+const window = args.includes('--window');
 const url = args.find(a => !a.startsWith('-')) || null;
 
 // Open about:blank first so we can navigate with a load-wait (matching
 // browser-nav's behavior); with --no-wait, hand the URL straight to
 // Target.createTarget and return as soon as the tab exists.
-const { targetId } = await openTab(noWait && url ? url : undefined);
+const { targetId } = await openTab(noWait && url ? url : undefined, { window });
 if (url && !noWait) {
   await run(targetId, 'nav', [url]);
 }
