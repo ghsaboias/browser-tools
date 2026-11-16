@@ -3,6 +3,7 @@
 // própria página busca (fetch/XHR) e rola com eventos reais de roda, num ritmo de pessoa,
 // até o post mais antigo passar de --since. Uso: ig-capture.mjs -t=<tab> <handle> <since YYYY-MM-DD> <out.json>
 import { run } from './lib/client.js';
+import { scrollFeed } from './lib/scroll.js';
 import fs from 'node:fs';
 const args = process.argv.slice(2);
 const tab = args.find(a => a.startsWith('-t='))?.slice(3);
@@ -32,8 +33,8 @@ for (let i = 0; i < 200; i++) {
   if (own.filter(p => p.taken_at < since).length >= 4) break;
   stale = items.length === last ? stale + 1 : 0; last = items.length;
   if (stale >= 12) { console.log('\nparou de carregar: a aba está na frente?'); break; }
-  try { await run(tab, 'raw', ['Input.dispatchMouseEvent', JSON.stringify({ type: 'mouseWheel', x: 700, y: 500, deltaX: 0, deltaY: 1800 })]); }
-  catch (e) { console.log(`\n${e.message}: a aba saiu da frente. Traga a aba para a frente e rode de novo; nada foi gravado.`); process.exit(1); }
+  try { await scrollFeed(tab, 1800); }
+  catch (e) { console.log(`\n${e.message}: a aba não voltou para a frente; nada foi gravado.`); process.exit(1); }
   await sleep(2200 + Math.random() * 1200);
 }
 fs.writeFileSync(out, JSON.stringify(items, null, 1));

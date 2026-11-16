@@ -9,6 +9,7 @@
 // pedido a cada 1,5 a 2,5 s) e grava os itens no mesmo formato, com `so_reels: true`. Guarda o feed da grade
 // em <feed>.grade.json na primeira vez.
 import { run } from './lib/client.js';
+import { scrollFeed } from './lib/scroll.js';
 import fs from 'node:fs';
 const args = process.argv.slice(2);
 const tab = args.find(a => a.startsWith('-t='))?.slice(3);
@@ -39,8 +40,8 @@ for (let i = 0; i < 400; i++) {
   if (lo > 0n && abaixo >= 6) break;
   stale = codes.length === last ? stale + 1 : 0; last = codes.length;
   if (stale >= 10) { console.log('\nfim da aba Reels (ou parou de carregar)'); break; }
-  try { await run(tab, 'raw', ['Input.dispatchMouseEvent', JSON.stringify({ type: 'mouseWheel', x: 700, y: 500, deltaX: 0, deltaY: 1600 })]); }
-  catch (e) { console.log(`\n${e.message}: a aba saiu da frente; nada foi gravado.`); process.exit(1); }
+  try { await scrollFeed(tab, 1600); }
+  catch (e) { console.log(`\n${e.message}: a aba não voltou para a frente; nada foi gravado.`); process.exit(1); }
   await sleep(1800 + Math.random() * 900);
 }
 const faltam = codes.filter(c => !tem.has(c) && pk(c) > lo && (hi === null || pk(c) < hi));
