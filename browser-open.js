@@ -4,7 +4,7 @@ import { tileBounds } from './lib/window.js';
 
 const USAGE = 'Usage: browser-open.js [url] [--window | --tile <k>/<n>] [--no-wait] [--id]\n' +
   '  --window   open the tab in a new window\n' +
-  '  --tile     open it in a new window placed in tile k of n (browser-window.js), in the background: it never covers\n' +
+  '  --tile     open it in a new window placed in tile k of n (browser-window.js; k/n@left for the left half), in the background: it never covers\n' +
   '             the user\'s windows or takes keyboard focus\n' +
   '  --no-wait  return as soon as the tab exists, without waiting for the load\n' +
   '  --id       print only the tab id (for T=$(browser-open.js --id ...))';

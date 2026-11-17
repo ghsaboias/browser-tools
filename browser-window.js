@@ -2,7 +2,7 @@
 // Places the window of a tab, without bringing it to the front (keyboard focus stays where it is).
 //
 // Usage:
-//   browser-window.js -t=<id> --tile <k>/<n>   tile k (0-based) of n in the right half of the rightmost display
+//   browser-window.js -t=<id> --tile <k>/<n>   tile k (0-based) of n in the right half of the rightmost display (k/n@left: the left half)
 //   browser-window.js -t=<id> --minimize
 //   browser-window.js --displays               the displays, in the browser's coordinates (macOS)
 //
