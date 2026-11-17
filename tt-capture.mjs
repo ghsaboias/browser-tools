@@ -17,15 +17,31 @@ const HOOK = `(() => { if (window.__ttCap) return; window.__ttCap = []; const ke
 const SUM = `(() => { const m = new Map(); for (const t of window.__ttCap || []) { try { for (const it of JSON.parse(t).itemList || []) m.set(it.id, { id: it.id, createTime: it.createTime, desc: it.desc, isPinned: !!(it.isPinned || it.isPinnedItem), imagePost: !!it.imagePost, duration: it.video?.duration || 0 }) } catch (e) {} }
  let hasMore = null; for (const t of window.__ttCap || []) { try { const j = JSON.parse(t); if (typeof j.hasMore === 'boolean') hasMore = j.hasMore } catch (e) {} }
  return JSON.stringify({ items: [...m.values()], hasMore }) })()`;
+// Quando a primeira página de /api/post/item_list (ou os dados do perfil) falha, o TikTok troca o feed por "Something went
+// wrong / Sorry about that! Please try again later." e um botão Refresh, sem data-e2e. O botão refaz a lista no próprio
+// documento (resetItemList + getItemList, sem recarregar: o gancho e o __ttCap continuam), e .click() basta. Visto em
+// 17/11/2026 com o item_list bloqueado; a classe do contêiner é DivErrorContainer e os textos vão em inglês e português.
+const REFRESH = `(() => { const b = [...document.querySelectorAll('[class*="DivErrorContainer"] button, [data-e2e="user-page"] button')]
+ .find(b => /^(Refresh|Atualizar|Recarregar)$/i.test(b.innerText.trim()) && /Something went wrong|Algo deu errado|Ocorreu um erro|Sorry about that|Desculpe/i.test(b.parentElement?.innerText || ''));
+ if (!b) return false; b.click(); return true })()`;
+const REFRESH_MAX = 3;
 await run(tab, 'injecton', [HOOK]);
 await run(tab, 'nav', [`https://www.tiktok.com/@${handle}`]);
 // Como no ig-capture: a janela precisa estar visível (browser-window.js --tile).
 await sleep(5000);
 const sinceTs = Date.parse(since) / 1000;
-let last = 0, stale = 0, items = [];
+let last = 0, stale = 0, items = [], refreshes = 0, refreshedAt = -1;
 for (let i = 0; i < 300; i++) {
   const page = JSON.parse(await run(tab, 'eval', [SUM]));
   items = page.items;
+  if (items.length > refreshedAt) refreshes = 0;
+  if (JSON.parse(await run(tab, 'eval', [REFRESH])) === true) {
+    if (refreshes >= REFRESH_MAX) { console.log(`\nparou de carregar: o TikTok mostrou "Something went wrong" depois de ${REFRESH_MAX} cliques em Refresh sem post novo`); break; }
+    refreshes++; refreshedAt = items.length; stale = 0;
+    console.log(`\n${handle}: "Something went wrong" com ${items.length} posts, cliquei em Refresh (${refreshes}/${REFRESH_MAX})`);
+    await sleep(4000);
+    continue;
+  }
   const oldest = items.filter(p => !p.isPinned).map(p => p.createTime).sort()[0];
   process.stdout.write(`\r${handle}: ${items.length} posts, mais antigo ${oldest ? new Date(oldest * 1000).toISOString().slice(0, 10) : '-'}   `);
   // Post fixado no topo pode ser antigo: só para quando 4 não fixados já passaram de --since.
