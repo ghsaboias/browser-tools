@@ -19,8 +19,7 @@ const SUM = `(() => { const m = new Map(); for (const t of window.__ttCap || [])
  return JSON.stringify({ items: [...m.values()], hasMore }) })()`;
 await run(tab, 'injecton', [HOOK]);
 await run(tab, 'nav', [`https://www.tiktok.com/@${handle}`]);
-// Como no ig-capture: numa aba em segundo plano o Brave não entrega o evento de roda.
-await run(tab, 'raw', ['Page.bringToFront', '{}']);
+// Como no ig-capture: a janela precisa estar visível (browser-window.js --tile).
 await sleep(5000);
 const sinceTs = Date.parse(since) / 1000;
 let last = 0, stale = 0, items = [];
@@ -33,7 +32,7 @@ for (let i = 0; i < 300; i++) {
   if (items.filter(p => !p.isPinned && p.createTime < sinceTs).length >= 4) break;
   if (page.hasMore === false) { console.log('\nfim do perfil'); break; }
   stale = items.length === last ? stale + 1 : 0; last = items.length;
-  if (stale >= 12) { console.log('\nparou de carregar: a aba está na frente?'); break; }
+  if (stale >= 12) { console.log('\nparou de carregar: a janela está visível?'); break; }
   try { await scrollFeed(tab, 1800); }
   catch (e) { console.log(`\n${e.message}: a aba não voltou para a frente; nada foi gravado.`); process.exit(1); }
   await sleep(2200 + Math.random() * 1200);

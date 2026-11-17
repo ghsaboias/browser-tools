@@ -27,7 +27,6 @@ const lo = antes[0] ?? 0n, hi = depois[0] ?? null;
 const tem = new Set(feed.map(p => p.code));
 
 await run(tab, 'nav', [`https://www.instagram.com/${handle}/reels/`]);
-await run(tab, 'raw', ['Page.bringToFront', '{}']);
 await sleep(4000);
 await run(tab, 'eval', ['window.__reels = new Set(); 0']);
 const COLETA = `(() => { for (const a of document.querySelectorAll('a[href*="/reel/"]')) { const m = a.href.match(/\\/reel\\/([^\\/]+)/); if (m) window.__reels.add(m[1]) } return JSON.stringify([...window.__reels]) })()`;

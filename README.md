@@ -20,6 +20,16 @@ browser-nav.js https://example.com --new
 
 Navigate to URLs. Use `--new` flag to open in a new tab instead of reusing current tab.
 
+## Place a window
+
+```bash
+browser-window.js -t=<id> --tile 0/3     # tile 0 of 3 in the right half of the rightmost display
+browser-window.js -t=<id> --minimize
+browser-window.js --displays             # display bounds in the browser's coordinates (macOS)
+```
+
+Moves the tab's window without bringing it to the front, so the user keeps keyboard focus. The tiles are a grid of ceil(sqrt(n)) columns over the right half of the rightmost display (the external monitor when one is connected). A visible, uncovered window keeps receiving wheel events and loading feeds while the user works elsewhere; a minimized or covered one does not.
+
 ## Evaluate JavaScript
 
 ```bash
@@ -64,12 +74,12 @@ Display all cookies for the current tab including domain, path, httpOnly, and se
 ./ig-capture.mjs -t=<tab> <handle> <since YYYY-MM-DD> <out.json>
 ```
 
-Captures a profile's feed through the logged-in browser without calling Instagram's private API (that returns 429). It installs a fetch/XHR hook with `injecton` before navigating, so the first ~12 posts embedded in the page are not missed, then scrolls with real `mouseWheel` events through `raw` (`Input.dispatchMouseEvent`) at a human pace until 4 posts are older than `since` (up to 3 pinned posts can be old). Synthetic `scrollBy` loads nothing. The tab must be in a visible window: in a background tab Instagram stops loading. Open a separate window (`Target.createTarget` with `newWindow: true`) instead of reusing the user's tabs; scrolling it by hand speeds it up. Output items carry `code`, `taken_at`, `user`, `coauthors`, `caption` and `slides[]` with image and video URLs (signed CDN URLs, they expire).
+Captures a profile's feed through the logged-in browser without calling Instagram's private API (that returns 429). It installs a fetch/XHR hook with `injecton` before navigating, so the first ~12 posts embedded in the page are not missed, then scrolls with real `mouseWheel` events through `raw` (`Input.dispatchMouseEvent`) at a human pace until 4 posts are older than `since` (up to 3 pinned posts can be old). Synthetic `scrollBy` loads nothing. The tab must be in a visible window: in a minimized or fully covered window the wheel event times out and Instagram stops loading. Open a separate window (`browser-open.js --window`) instead of reusing the user's tabs and tile it on a monitor with `browser-window.js --tile <k>/<n>`: a visible window scrolls while the user works in another application, and nothing takes keyboard focus. When a wheel event times out, `lib/scroll.js` restores the window and brings the tab to the front (this does take focus) before trying again. Output items carry `code`, `taken_at`, `user`, `coauthors`, `caption` and `slides[]` with image and video URLs (signed CDN URLs, they expire).
 ## Instagram Reels tab
 
 ```bash
 ./ig-reels.mjs -t=<tab> <handle> <since YYYY-MM-DD> <until YYYY-MM-DD> <feed.json>
 ```
 
-Completes a feed.json written by `ig-capture.mjs` with the reels that exist only in the profile's Reels tab: a reel posted without "show on profile grid" never appears in the grid the capture scrolls (one deputy had 7 grid posts and 138 Reels-tab reels in the same seven weeks). The Reels tab carries no dates, so the window is bounded by shortcode order (a shortcode is the media id in base 64 and grows with time) against the dated posts already in feed.json. It scrolls the tab until it is past the start of the window, then fetches `/api/v1/media/<id>/info/` from the page for each missing reel, one request every 1.5 to 2.5 s, and appends the items in the same shape with `so_reels: true`; the original grid feed is kept as `<feed>.grade.json`. Needs the tab in front, like the capture.
+Completes a feed.json written by `ig-capture.mjs` with the reels that exist only in the profile's Reels tab: a reel posted without "show on profile grid" never appears in the grid the capture scrolls (one deputy had 7 grid posts and 138 Reels-tab reels in the same seven weeks). The Reels tab carries no dates, so the window is bounded by shortcode order (a shortcode is the media id in base 64 and grows with time) against the dated posts already in feed.json. It scrolls the tab until it is past the start of the window, then fetches `/api/v1/media/<id>/info/` from the page for each missing reel, one request every 1.5 to 2.5 s, and appends the items in the same shape with `so_reels: true`; the original grid feed is kept as `<feed>.grade.json`. Needs a visible window, like the capture.
 

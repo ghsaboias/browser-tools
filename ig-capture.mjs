@@ -19,9 +19,8 @@ const SUM = `(() => { const m = new Map(); const best = v => { const c = (v?.ima
  return JSON.stringify([...m.values()]) })()`;
 await run(tab, 'injecton', [HOOK]);
 await run(tab, 'nav', [`https://www.instagram.com/${handle}/`]);
-// Numa aba em segundo plano o Brave não entrega o evento de roda e o Instagram para de carregar o feed.
-await run(tab, 'raw', ['Page.bringToFront', '{}']);
-console.log(`Deixe a aba do Instagram (${handle}) na frente até o fim da captura.`);
+// A janela precisa estar visível (browser-window.js --tile): numa janela minimizada ou coberta o Brave não entrega o
+// evento de roda e o feed para de carregar; o scrollFeed então a restaura e a traz para a frente.
 await sleep(4000);
 let last = 0, stale = 0, items = [];
 for (let i = 0; i < 200; i++) {
@@ -32,7 +31,7 @@ for (let i = 0; i < 200; i++) {
   // Até 3 posts fixados no topo podem ser antigos: só para quando 4 já passaram de --since.
   if (own.filter(p => p.taken_at < since).length >= 4) break;
   stale = items.length === last ? stale + 1 : 0; last = items.length;
-  if (stale >= 12) { console.log('\nparou de carregar: a aba está na frente?'); break; }
+  if (stale >= 12) { console.log('\nparou de carregar: a janela está visível?'); break; }
   try { await scrollFeed(tab, 1800); }
   catch (e) { console.log(`\n${e.message}: a aba não voltou para a frente; nada foi gravado.`); process.exit(1); }
   await sleep(2200 + Math.random() * 1200);
