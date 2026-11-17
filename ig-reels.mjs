@@ -50,7 +50,7 @@ const INFO = id => `(async () => { const csrf = (document.cookie.match(/csrftoke
  if (!r.ok) return JSON.stringify({ erro: r.status });
  const o = (await r.json()).items?.[0]; if (!o) return JSON.stringify({ erro: 'sem item' });
  const best = v => { const c = (v?.image_versions2?.candidates || []).slice().sort((a, b) => b.width - a.width)[0]; return c?.url || null };
- return JSON.stringify({ code: o.code, taken_at: new Date(o.taken_at * 1000).toISOString(), user: o.user?.username, coauthors: (o.coauthor_producers || []).map(u => u.username), media_type: o.media_type, product_type: o.product_type, caption: o.caption?.text || '', slides: (o.carousel_media || [o]).map(s => ({ media_type: s.media_type, image: best(s), video: (s.video_versions || [])[0]?.url || null })), so_reels: true }) })()`;
+ return JSON.stringify({ code: o.code, taken_at: new Date(o.taken_at * 1000).toISOString(), user: o.user?.username, coauthors: (o.coauthor_producers || []).map(u => u.username), media_type: o.media_type, product_type: o.product_type, caption: o.caption?.text || '', slides: (o.carousel_media || [o]).map(s => ({ media_type: s.media_type, image: best(s), video: (s.video_versions || [])[0]?.url || null, duration: s.video_duration || null })), so_reels: true }) })()`;
 const novos = [], erros = [];
 for (const [i, c] of faltam.entries()) {
   let it;
