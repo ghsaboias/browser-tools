@@ -83,3 +83,21 @@ Captures a profile's feed through the logged-in browser without calling Instagra
 
 Completes a feed.json written by `ig-capture.mjs` with the reels that exist only in the profile's Reels tab: a reel posted without "show on profile grid" never appears in the grid the capture scrolls (one deputy had 7 grid posts and 138 Reels-tab reels in the same seven weeks). The Reels tab carries no dates, so the window is bounded by shortcode order (a shortcode is the media id in base 64 and grows with time) against the dated posts already in feed.json. It scrolls the tab until it is past the start of the window, then fetches `/api/v1/media/<id>/info/` from the page for each missing reel, one request every 1.5 to 2.5 s, and appends the items in the same shape with `so_reels: true`; the original grid feed is kept as `<feed>.grade.json`. Needs a visible window, like the capture.
 
+
+## TikTok profile
+
+```bash
+./tt-profile.mjs -t=<tab> <handle> [--posts=N]
+```
+
+Reads one TikTok profile and prints JSON: `status` (`ok`, `not_found` for "Couldn't find this account", `error_screen`, `timeout`), name, bio, bio link, follower, like and video counts, and the N latest posts (default 12) with date, URL and caption. The profile comes from the JSON TikTok embeds in the page and the posts from the `/api/post/item_list` responses the page fetches (hooked with `injecton` before navigating). Use it for every TikTok profile instead of `browser-nav.js` + `browser-eval.js`. A page read in its first seconds, or on the "Something went wrong" screen, shows the header without posts, so a live account looks empty. When that screen appears, the script clicks Refresh the way a person does (`lib/pointer.js`, at most 3 times) and reads again. A normal profile takes about 3 s. It needs a visible window, because the click is real input.
+
+## TikTok feed capture
+
+```bash
+./tt-capture.mjs -t=<tab> <handle> <since YYYY-MM-DD> <out.json>
+```
+
+Captures a profile's posts back to `since` by scrolling with real wheel events, for profiles `yt-dlp` cannot list. It handles the "Something went wrong" screen the same way as `tt-profile.mjs`. Both use `lib/tiktok.js`.
+
+The "Something went wrong / Sorry about that! Please try again later." screen replaces the feed when the first `item_list` response comes back empty. It was seen in real captures on 18/11/2026, 3 to 13 s after the profile opened, often with the Refresh button below the fold of a tiled window. `lib/pointer.js` clicks it like a person: it pauses 0.7 to 1.6 s, scrolls with the wheel until the button is in view, moves the pointer in 8 to 15 eased steps to a random point inside the button, then presses and releases (`Input.dispatchMouseEvent`, so `isTrusted`). It was tested by emptying the first list responses until the screen showed: one click brought the list back (195 and 83 posts in two captures, 35 in a profile read).
