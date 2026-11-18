@@ -83,6 +83,14 @@ Captures a profile's feed through the logged-in browser without calling Instagra
 
 Completes a feed.json written by `ig-capture.mjs` with the reels that exist only in the profile's Reels tab: a reel posted without "show on profile grid" never appears in the grid the capture scrolls (one deputy had 7 grid posts and 138 Reels-tab reels in the same seven weeks). The Reels tab carries no dates, so the window is bounded by shortcode order (a shortcode is the media id in base 64 and grows with time) against the dated posts already in feed.json. It scrolls the tab until it is past the start of the window, then fetches `/api/v1/media/<id>/info/` from the page for each missing reel, one request every 1.5 to 2.5 s, and appends the items in the same shape with `so_reels: true`; the original grid feed is kept as `<feed>.grade.json`. Needs a visible window, like the capture.
 
+## Instagram video durations
+
+```bash
+./ig-duracoes.mjs -t=<tab> <candidate instagram dir> [...]
+```
+
+Fills the missing `duration` of video slides in a feed.json captured before `ig-capture.mjs` recorded it (16/11/2026), for the transcribed posts only (`<dir>/<code>/video-*.txt`). One `/api/v1/media/<id>/info/` request per post, every 1.5 to 2.5 s; it writes only durations that were missing, keeps the original as `feed.sem-duracao.json`, and stops on 429 or 401 after saving what it got. The tab only needs to be on instagram.com, so a background tile works (`browser-open.js --id --tile 1/1 https://www.instagram.com/`). Checked on 18/11/2026 against the ffprobe of the transcribed audio: within 0.003 s.
+
 
 ## TikTok profile
 
