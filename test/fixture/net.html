@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Rede</title></head>
+<body><main>
+  <h1>Rede</h1>
+  <button onclick="carregar()">Carregar dados</button>
+  <button onclick="rastrear()">Carregar rastreador</button>
+  <p id="out"></p>
+  <p id="tracker"></p>
+  <script>
+    async function carregar() {
+      const r = await fetch('/api.json?pagina=1', { method: 'POST', body: JSON.stringify({ busca: 'cvm' }) });
+      const j = await r.json();
+      document.getElementById('out').textContent = 'itens: ' + j.itens.length;
+    }
+    function rastrear() {
+      const s = document.createElement('script');
+      s.src = '/tracker.js';
+      s.onload = () => { document.getElementById('tracker').textContent = 'rastreador carregou'; };
+      s.onerror = () => { document.getElementById('tracker').textContent = 'rastreador bloqueado'; };
+      document.body.appendChild(s);
+    }
+  </script>
+</main></body></html>

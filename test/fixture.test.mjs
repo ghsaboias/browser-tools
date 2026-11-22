@@ -196,6 +196,43 @@ try {
     expect(bt('browser-eval.js', T, '--isolated', 'typeof window.signals') === 'undefined', '--isolated saw a page global');
   });
 
+  await check('nav reports the HTTP status of the document', () => {
+    expect(/\(HTTP 404\)/.test(bt('browser-nav.js', T, `${BASE}/missing.html`)), 'no 404');
+    expect(/\(HTTP 200\)/.test(bt('browser-nav.js', T, `${BASE}/net.html`)), 'no 200');
+  });
+
+  await check('intercept records a fetch with its POST body and JSON response, and blocks a script', () => {
+    expect(/not recording/.test(btFail('browser-intercept.js', 'read', T) || ''), 'read before start did not refuse');
+    bt('browser-intercept.js', 'start', T, '--match=api.json', '--block=tracker.js');
+    const s = bt('browser-snap.js', T);
+    bt('browser-click.js', T, refOf(s, /button "Carregar dados"/));
+    const out = bt('browser-intercept.js', 'read', T, '--wait=10000', '--body');
+    expect(/POST 200 Fetch .*\/api\.json\?pagina=1/.test(out), `no POST line:\n${out}`);
+    expect(/sent: \{"busca":"cvm"\}/.test(out), `no request body:\n${out}`);
+    expect(/body: \{"itens":\[\{"id":1,"titulo":"Fato relevante"\}/.test(out), `no response body:\n${out}`);
+    const entries = JSON.parse(bt('browser-intercept.js', 'read', T, '--json'));
+    expect(entries.length === 1 && JSON.parse(entries[0].body).total === 2, JSON.stringify(entries));
+    bt('browser-click.js', T, refOf(s, /button "Carregar rastreador"/));
+    bt('browser-wait.js', T, '--text=rastreador');
+    expect(bt('browser-eval.js', T, "document.getElementById('tracker').textContent") === 'rastreador bloqueado', 'tracker was not blocked');
+    const all = bt('browser-intercept.js', 'read', T, '--match=tracker');
+    expect(/1 requests blocked/.test(all) && /ERR/.test(all), all);
+    expect(/stopped/.test(bt('browser-intercept.js', 'stop', T)), 'stop');
+    bt('browser-click.js', T, refOf(s, /button "Carregar rastreador"/));
+    bt('browser-wait.js', T, '--text=carregou');
+  });
+
+  await check('browser-run reads the record in a flow', () => {
+    const out = bt('browser-run.js', T, '-e', `
+      await page.goto(${JSON.stringify(BASE + '/net.html')});
+      await page.intercept.start({ match: 'api.json' });
+      await page.click(await page.find('button', 'Carregar dados'));
+      const [e] = await page.intercept.read({ wait: 10000 });
+      await page.intercept.stop();
+      return JSON.parse(e.body).itens.map(i => i.titulo).join(', ');`);
+    expect(/Fato relevante, Comunicado/.test(out), out);
+  });
+
   await check('stealth: no Runtime.enable signal, no leaked globals, mouse moves before clicks, paced keys', async () => {
     bt('browser-nav.js', T, `${BASE}/probe.html`);
     const s = bt('browser-snap.js', T);

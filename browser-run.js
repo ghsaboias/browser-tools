@@ -12,6 +12,8 @@
 //   click(refOrSelector, {count, button, force}) · fill(ref, text) · type(text) · press(...keys)
 //   select(ref, ...values) · hover(ref) · scroll(pxOrRef) · wait({text, url, selector, fresh, gone, timeout})
 //   eval(expr) (page's world) · evalIsolated(expr) (DOM only, unseen by the page) · screenshot({path, full, ref}) · html(ref?) · close()
+//   intercept.start({match, block}) · intercept.read({match, wait, clear}) → [{n, method, url, type, status, mime, size, postData, body, base64, error}] · intercept.stop()
+//   (browser-intercept.js documents the record)
 // click returns what happened, e.g. "clicked e12; opened tab [AB12CD34] https://…";
 // page.popup() returns the page for the newest tab this one opened.
 //
@@ -23,7 +25,7 @@
 // --url alone opens a fresh tab. --url navigates only a tab this call opened.
 // The last line printed is the tab the script ended in, to pass back with -t.
 import { readFileSync } from 'fs';
-import { openTab, runDirect, findTarget, listTargets, shortId } from './lib/client.js';
+import { openTab, closeTab, runDirect, findTarget, listTargets, shortId } from './lib/client.js';
 import { parseArgs } from './lib/cli.js';
 
 const { tab, flags, rest } = parseArgs();
@@ -60,8 +62,13 @@ function makePage(targetId) {
     eval: async (expr) => { const r = await call('eval', expr); try { return JSON.parse(r); } catch { return r; } },
     evalIsolated: async (expr) => { const r = await call('eval', expr, JSON.stringify({ isolated: true })); try { return JSON.parse(r); } catch { return r; } },
     html: (t) => call('html', ...(t ? [t] : [])),
+    intercept: {
+      start: (o = {}) => call('intercept', 'start', JSON.stringify(o)),
+      read: async (o = {}) => (await json('intercept', 'read', JSON.stringify(o))).entries,
+      stop: () => call('intercept', 'stop', '{}'),
+    },
     screenshot: async (o = {}) => (await json('shot', o.path || '', JSON.stringify({ full: o.full, ref: o.ref }))).file,
-    close: () => runDirect(targetId, 'eval', ['window.close()']).catch(() => {}),
+    close: () => closeTab(targetId).catch(() => {}),
     popup: async () => {
       const all = await listTargets();
       const mine = all.filter(t => t.openerId === targetId);
