@@ -11,7 +11,7 @@
 //   goto(url) · url() · snap({all, max, root}) · find(role, name) → ref
 //   click(refOrSelector, {count, button, force}) · fill(ref, text) · type(text) · press(...keys)
 //   select(ref, ...values) · hover(ref) · scroll(pxOrRef) · wait({text, url, selector, gone, timeout})
-//   eval(expr) (isolated world: DOM only) · evalMain(expr) (page's own globals) · screenshot({path, full, ref}) · html(ref?) · close()
+//   eval(expr) (page's world) · evalIsolated(expr) (DOM only, unseen by the page) · screenshot({path, full, ref}) · html(ref?) · close()
 // click returns what happened, e.g. "clicked e12; opened tab [AB12CD34] https://…";
 // page.popup() returns the page for the newest tab this one opened.
 //
@@ -57,10 +57,10 @@ function makePage(targetId) {
     scroll: (arg = 600) => call('scroll', arg),
     wait: (o) => call('wait', JSON.stringify(o)),
     eval: async (expr) => { const r = await call('eval', expr); try { return JSON.parse(r); } catch { return r; } },
-    evalMain: async (expr) => { const r = await call('eval', expr, JSON.stringify({ main: true })); try { return JSON.parse(r); } catch { return r; } },
+    evalIsolated: async (expr) => { const r = await call('eval', expr, JSON.stringify({ isolated: true })); try { return JSON.parse(r); } catch { return r; } },
     html: (t) => call('html', ...(t ? [t] : [])),
     screenshot: async (o = {}) => (await json('shot', o.path || '', JSON.stringify({ full: o.full, ref: o.ref }))).file,
-    close: () => runDirect(targetId, 'evalmain', ['window.close()']).catch(() => {}),
+    close: () => runDirect(targetId, 'eval', ['window.close()']).catch(() => {}),
     popup: async () => {
       const all = await listTargets();
       const mine = all.filter(t => t.openerId === targetId);
@@ -75,7 +75,7 @@ function makePage(targetId) {
 let current;
 const tabs = {
   open: async (url, o = {}) => {
-    const { targetId, existed } = await openTab(undefined, o.name);
+    const { targetId, existed } = await openTab(undefined, { name: o.name });
     if (url && !existed) await runDirect(targetId, 'nav', [url]);
     current = makePage(targetId);
     return current;

@@ -102,6 +102,16 @@ try {
     expect(JSON.parse(bt('browser-find.js', T, 'button', 'Buscar fora')).ref, 'find failed');
   });
 
+  await check('clickElement (lib/pointer.js) wheels to a button below the fold and clicks it', async () => {
+    bt('browser-nav.js', T, `${BASE}/index.html`);
+    const { clickElement } = await import(join(ROOT, 'lib', 'pointer.js'));
+    const ok = await clickElement(NAME, `document.getElementById('fundo')`);
+    const missing = await clickElement(NAME, `document.getElementById('nao-existe')`);
+    const state = JSON.parse(bt('browser-eval.js', T, `JSON.stringify([document.getElementById('fundo').textContent, scrollY, wheels])`));
+    expect(ok === true && missing === false, `ok=${ok} missing=${missing}`);
+    expect(state[0] === 'fundo clicado' && state[1] > 0 && state[2] > 3, JSON.stringify(state));
+  });
+
   await check('stale ref after navigation says so', () => {
     bt('browser-nav.js', T, `${BASE}/index.html`);
     const err = btFail('browser-click.js', T, 'e999');
@@ -118,10 +128,10 @@ try {
     expect(/enviado: run@exemplo\.com \/ RJ/.test(out) && /# tab \[/.test(out), out);
   });
 
-  await check('eval runs in an isolated world unless --main', () => {
+  await check('eval runs in the page world; --isolated does not see page globals', () => {
     bt('browser-nav.js', T, `${BASE}/probe.html`);
-    expect(bt('browser-eval.js', T, 'typeof window.signals') === 'undefined', 'isolated eval saw a page global');
-    expect(bt('browser-eval.js', T, '--main', 'typeof window.signals') === 'object', '--main did not see the page global');
+    expect(bt('browser-eval.js', T, 'typeof window.signals') === 'object', 'page-world eval missed the page global');
+    expect(bt('browser-eval.js', T, '--isolated', 'typeof window.signals') === 'undefined', '--isolated saw a page global');
   });
 
   await check('stealth: no Runtime.enable signal, no leaked globals, mouse moves before clicks, paced keys', async () => {
@@ -130,7 +140,7 @@ try {
     bt('browser-click.js', T, refOf(s, /button "Botão"/));
     bt('browser-fill.js', T, refOf(s, /textbox "Campo"/), 'texto digitado');
     await new Promise(r => setTimeout(r, 700));
-    const sig = JSON.parse(bt('browser-eval.js', T, '--main', 'JSON.stringify(window.signals)'));
+    const sig = JSON.parse(bt('browser-eval.js', T, 'JSON.stringify(window.signals)'));
     expect(sig.runtimeEnable === false, 'Runtime.enable detected');
     expect(sig.webdriver === false, 'navigator.webdriver is true');
     expect(sig.leaked.length === 0, `globals leaked: ${sig.leaked}`);

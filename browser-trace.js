@@ -28,7 +28,7 @@ try {
   await new Promise(r => setTimeout(r, 1000));
 
   // Collect trace data via eval on performance entries (simpler than stream)
-  const perfRaw = await runDirect(targetId, 'evalmain', [`JSON.stringify({
+  const perfRaw = await runDirect(targetId, 'eval', [`JSON.stringify({
     resources: performance.getEntriesByType('resource').map(r => ({
       name: r.name, type: r.initiatorType, duration: Math.round(r.duration),
       start: Math.round(r.startTime), size: r.transferSize || 0,

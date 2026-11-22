@@ -13,12 +13,12 @@ const duration = durArg ? parseInt(durArg.split('=')[1]) * 1000 : 5000;
 // For now, we do it via eval — inject capture + collect.
 
 if (reload) {
-  await run(target, 'evalmain', ['location.reload()']);
+  await run(target, 'eval', ['location.reload()']);
   await new Promise(r => setTimeout(r, 1000));
 }
 
 // Inject capture
-await run(target, 'evalmain', [`
+await run(target, 'eval', [`
   if (!window.__capturedLogs) {
     window.__capturedLogs = [];
     for (const level of ['log','error','warn','info']) {
@@ -34,7 +34,7 @@ await run(target, 'evalmain', [`
 console.log(`Capturing logs for ${duration / 1000}s...`);
 await new Promise(r => setTimeout(r, duration));
 
-const logs = await run(target, 'evalmain', ['JSON.stringify(window.__capturedLogs || [])']);
+const logs = await run(target, 'eval', ['JSON.stringify(window.__capturedLogs || [])']);
 const entries = JSON.parse(logs);
 
 if (entries.length > 0) {

@@ -12,7 +12,7 @@ try {
   await runDirect(targetId, 'nav', [url]);
   await new Promise(r => setTimeout(r, 1500));
 
-  const raw = await runDirect(targetId, 'evalmain', [`JSON.stringify(performance.getEntriesByType('resource').map(r => ({
+  const raw = await runDirect(targetId, 'eval', [`JSON.stringify(performance.getEntriesByType('resource').map(r => ({
     url: r.name, type: r.initiatorType, duration: Math.round(r.duration),
     size: r.transferSize || 0, start: Math.round(r.startTime),
     status: r.responseStatus || 0,

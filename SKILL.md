@@ -29,7 +29,8 @@ cd ~/agent-tools/browser-tools
 ## Commands
 
 ```bash
-browser-open.js [<url>] [--name=<n>] [--no-wait]   # new tab in its own window; --name reuses an open tab of that name
+browser-open.js [<url>] [--name=<n>] [--no-wait] [--tile=k/n] [--id]   # own window; --name reuses an open tab of that name
+browser-window.js -t=<tab> --tile k/n | --minimize # Mac: place a window without taking focus
 browser-list.js                                    # tabs: [ID] "name" title (idle) url
 browser-snap.js [-t] [--all] [--max=N] [<ref>]     # outline with refs
 browser-find.js [-t] <role|*> [name|/regex/]       # one ref by role and name → {"ref":"e14",...}
@@ -43,7 +44,7 @@ browser-key.js [-t] Enter | Tab | "Ctrl+a" ...      # real key events
 browser-scroll.js [-t] [px | -px | <ref>]          # wheel steps; default 600
 browser-wait.js [-t] --text=… | --url=… | --selector=… | --gone=… [--timeout=ms]
 browser-nav.js [-t] <url>                          # waits for load
-browser-eval.js [-t] [--main] "<js>"               # isolated world; --main for the page's own globals
+browser-eval.js [-t] [--isolated] "<js>"           # page's world; --isolated: DOM only, unseen by the page
 browser-screenshot.js [-t] [--full | <ref>] [--out=path]
 browser-html.js [-t] [<ref|selector>]
 browser-close.js -t=<tab>
@@ -67,22 +68,22 @@ When the steps are known, run them as one script instead of one command per step
 '
 ```
 
-In scope: `page` (`goto url snap find click fill type press select hover scroll wait eval evalMain screenshot html popup`), `tabs` (`open(url, {name})`, `get(q)`, `list()`), `log`, `sleep`. The last line is `# tab [ID] url`; keep going with `-t=<ID>` or the name. A failed step prints `error: …` and the tab, so the next call continues from where it stopped.
+In scope: `page` (`goto url snap find click fill type press select hover scroll wait eval evalIsolated screenshot html popup`), `tabs` (`open(url, {name})`, `get(q)`, `list()`), `log`, `sleep`. The last line is `# tab [ID] url`; keep going with `-t=<ID>` or the name. A failed step prints `error: …` and the tab, so the next call continues from where it stopped.
 
 ## Quiet in the page
 
 Bot walls look for automation, so the defaults are the quiet ones:
 
-- Helpers and `browser-eval.js` run in an isolated world: the page cannot see their globals or hook the DOM calls they make. `--main` / `page.evalMain` only when you need the page's JS state (`window.__NEXT_DATA__` as an object, a store).
+- snap, find, click, fill, select, scroll and wait run their own JavaScript in an isolated world: the page cannot see their globals or trap the DOM calls they make. `browser-eval.js` runs in the page's world (its globals, and hooks on fetch/XHR that catch the page's requests, as the capture scripts need); `--isolated` / `page.evalIsolated` for plain DOM reads on a site that fights bots.
 - The daemon never sends `Runtime.enable` (the console-serialization leak) and adds no `sourceURL`.
 - The mouse travels on a curved path before every click, typing is paced (30–95 ms a key, longer after punctuation), scrolling is wheel steps. `BROWSER_TOOLS_HUMAN=0` turns pacing off for speed on sites that don't care.
 
-Checked against rebrowser-bot-detector on the Pi: runtimeEnableLeak, sourceUrlLeak, mainWorldExecution, navigatorWebdriver and cdpBindingGlobals pass, where `browser-do` (Puppeteer) fails the first three. The Pi's binary is Chromium, which the detector flags as "not Google Chrome"; lwcloud runs Google Chrome.
+Checked against rebrowser-bot-detector on the Pi: runtimeEnableLeak, sourceUrlLeak, mainWorldExecution (with snap, click and `--isolated` reads), navigatorWebdriver and cdpBindingGlobals pass, where `browser-do` (Puppeteer) fails the first three. The Pi's binary is Chromium, which the detector flags as "not Google Chrome"; lwcloud runs Google Chrome.
 
 ## Where the browser is
 
 - **Pi and lwcloud**: the `browser-tools-browser` systemd user unit runs a headed browser on Xvfb `:99` (Pi: Chromium, profile `~/.michael-slack/chromium-profile`; lwcloud: Google Chrome, `~/.config/browser-tools/profile`). `detectBrowser` reads its `DevToolsActivePort`. The profile is shared with michael-slack's `browser-do`, `browser-record` and the `:7899` screenshot server, so logins made in either are visible to both. `systemctl --user restart browser-tools-browser` when it wedges.
-- **Mac**: your live Brave/Chrome with remote debugging on (`brave://inspect/#remote-debugging`); each new daemon costs one approval prompt there, so leave the daemon running.
+- **Mac**: your live Brave/Chrome with remote debugging on (`brave://inspect/#remote-debugging`); each new daemon costs one approval prompt there, so leave the daemon running. A feed only loads while its window is visible and uncovered: tile capture windows (`--tile`, `browser-window.js`) instead of bringing them to the front. The Instagram and TikTok capture scripts (`ig-capture.mjs`, `ig-reels.mjs`, `tt-capture.mjs`, `tt-profile.mjs`) serve the promessas pipeline (`daily-journal-platform/scripts/elections/canais`).
 
 **Each agent tab opens in its own window.** A tab behind another tab in the same window is hidden, draws no frames, and CDP input to it hangs; actions on an existing hidden tab bring it to the front first.
 

@@ -17,9 +17,11 @@
   <button id="spa" onclick="history.pushState({}, '', '/rota-spa'); document.getElementById('out').textContent='rota trocada'">Trocar rota</button>
   <button id="tarde" onclick="setTimeout(()=>{const p=document.createElement('p');p.textContent='Carregou depois';document.querySelector('main').append(p)},1200)">Carregar depois</button>
   <iframe id="mesma" src="same.html" width="400" height="120"></iframe>
+  <button id="fundo" style="display:block;margin-top:1400px" onclick="this.textContent='fundo clicado'">Botão no fundo</button>
   <iframe id="outra" width="400" height="160" style="margin-top:900px"></iframe>
 </main>
 <div id="modal" hidden role="dialog" aria-label="Aviso de cookies"><div class="box">Usamos cookies <button onclick="document.getElementById('modal').hidden=true">Aceitar</button></div></div>
 <footer><a href="/sobre">Sobre</a> <a href="/contato">Contato</a></footer>
-<script>document.getElementById("outra").src = "http://127.0.0.1:" + location.port + "/frame.html"</script>
+<script>window.wheels = 0; addEventListener('wheel', () => wheels++);
+document.getElementById("outra").src = "http://127.0.0.1:" + location.port + "/frame.html"</script>
 </body></html>
