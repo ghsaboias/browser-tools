@@ -44,7 +44,7 @@ async function alive(wsUrl) {
   return new Promise((res) => {
     let ws;
     try { ws = new WebSocket(wsUrl); } catch { return res(false); }
-    const t = setTimeout(() => { ws.close(); res(false); }, 2000);
+    const t = setTimeout(() => { ws.close(); res(false); }, 8000);
     ws.onopen = () => { clearTimeout(t); ws.close(); res(true); };
     ws.onerror = () => { clearTimeout(t); res(false); };
   });
@@ -72,7 +72,7 @@ async function cdpClose(wsUrl) {
   return new Promise((res) => {
     let ws;
     try { ws = new WebSocket(wsUrl); } catch { return res(false); }
-    const t = setTimeout(() => { ws.close(); res(false); }, 2000);
+    const t = setTimeout(() => { ws.close(); res(false); }, 8000);
     ws.onopen = () => { ws.send(JSON.stringify({ id: 1, method: 'Browser.close' })); };
     ws.onclose = () => { clearTimeout(t); res(true); };
     ws.onerror = () => { clearTimeout(t); res(false); };
