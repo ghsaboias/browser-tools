@@ -12,6 +12,17 @@
     <button type="submit" id="enviar">Enviar</button>
   </form>
   <p id="out"></p>
+  <label>Município <select id="mun"><option value="m0">Cidade 00</option><option value="m1">Cidade 01</option><option value="m2">Cidade 02</option><option value="m3">Cidade 03</option><option value="m4">Cidade 04</option><option value="m5">Cidade 05</option><option value="m6">Cidade 06</option><option value="m7">Cidade 07</option><option value="m8">Cidade 08</option><option value="m9">Cidade 09</option><option value="m10">Cidade 10</option><option value="m11">Cidade 11</option><option value="m12">Cidade 12</option><option value="m13">Cidade 13</option><option value="m14">Cidade 14</option><option value="m15">Cidade 15</option><option value="m16">Cidade 16</option><option value="m17">Cidade 17</option><option value="m18">Cidade 18</option><option value="m19">Cidade 19</option><option value="m20">Cidade 20</option><option value="m21">Cidade 21</option><option value="m22">Cidade 22</option><option value="m23">Cidade 23</option><option value="m24">Cidade 24</option><option value="m25">Cidade 25</option><option value="m26">Cidade 26</option><option value="m27">Cidade 27</option><option value="m28">Cidade 28</option><option value="m29">Cidade 29</option><option value="m30">Cidade 30</option><option value="m31">Cidade 31</option><option value="m32">Cidade 32</option><option value="m33">Cidade 33</option><option value="m34">Cidade 34</option><option value="m35">Cidade 35</option><option value="m36">Cidade 36</option><option value="m37">Cidade 37</option><option value="m38">Cidade 38</option><option value="m39">Cidade 39</option></select></label>
+  <button id="nada">Não faz nada</button>
+  <label>Empresa <input id="empresa" oninput="const l=document.getElementById('sug');l.innerHTML='';if(this.value.length>1)for(const n of ['VALE S.A.','VALEC'])l.insertAdjacentHTML('beforeend','<li style=\'cursor:pointer\' onclick=\'document.getElementById(&quot;empresa&quot;).value=this.textContent;this.parentElement.innerHTML=&quot;&quot;\'>'+n+'</li>')"></label>
+  <ul id="sug" style="list-style:none"></ul>
+  <table id="mensal"><tr><th>Dia</th><th>Jan</th><th>Fev</th><th>Mar</th></tr><tr><td>2</td><td>120.125</td><td></td><td>125.300</td></tr></table>
+  <a href="/buscar" id="btnPesquisar"><img src="/img/lupa.png" alt=""></a>
+  <details id="filtros"><summary>Filtros</summary><label>Data inicial <input id="dataIni"></label></details>
+  <button id="ajax" onclick="setTimeout(()=>{document.querySelector('#res tbody').innerHTML='<tr><td>novo resultado</td></tr>'},800)">Buscar AJAX</button>
+  <table id="res"><tbody><tr><td>resultado antigo</td></tr></tbody></table>
+  <a href="#cartao" id="cartao" onclick="document.getElementById('out').textContent='cartão clicado'">Cartão <div style="padding:20px;border:1px solid #ccc">Bloco dentro do link</div></a>
+  <form id="assina" aria-label="Assinatura"><input aria-label="Seu e-mail"><button type="button" onclick="this.textContent='Assinado'">Assinar</button></form>
   <button id="abre-modal" onclick="document.getElementById('modal').hidden=false">Abrir aviso</button>
   <a href="popup.html" target="_blank">Abrir em nova aba</a>
   <button id="spa" onclick="history.pushState({}, '', '/rota-spa'); document.getElementById('out').textContent='rota trocada'">Trocar rota</button>
@@ -21,7 +32,7 @@
   <iframe id="outra" width="400" height="160" style="margin-top:900px"></iframe>
 </main>
 <div id="modal" hidden role="dialog" aria-label="Aviso de cookies"><div class="box">Usamos cookies <button onclick="document.getElementById('modal').hidden=true">Aceitar</button></div></div>
-<footer><a href="/sobre">Sobre</a> <a href="/contato">Contato</a></footer>
+<footer><button>Assinar</button> <a href="/sobre">Sobre</a> <a href="/contato">Contato</a></footer>
 <script>window.wheels = 0; addEventListener('wheel', () => wheels++);
 document.getElementById("outra").src = "http://127.0.0.1:" + location.port + "/frame.html"</script>
 </body></html>

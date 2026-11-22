@@ -112,6 +112,68 @@ try {
     expect(state[0] === 'fundo clicado' && state[1] > 0 && state[2] > 3, JSON.stringify(state));
   });
 
+  await check('long option lists collapse; snap <ref> lists them; select by label still works', () => {
+    const s = bt('browser-snap.js', T);
+    expect(/more options/.test(s) && !/Cidade 35/.test(s), 'options not collapsed');
+    const mun = refOf(s, /combobox "Município"/);
+    expect(/Cidade 35/.test(bt('browser-snap.js', T, mun)), 'snap <ref> did not list all options');
+    expect(/Cidade 35/.test(bt('browser-select.js', T, mun, 'Cidade 35')), 'select by label failed');
+  });
+
+  await check('a click that changes nothing says so; a link around a block clicks', () => {
+    const s = bt('browser-snap.js', T);
+    expect(/did not change/.test(bt('browser-click.js', T, refOf(s, /button "Não faz nada"/))), 'no warning on a no-op click');
+    expect(!/did not change/.test(bt('browser-click.js', T, refOf(s, /checkbox "Aceito/))), 'checkbox click flagged as no-op');
+    bt('browser-click.js', T, refOf(s, /link "Cartão/));
+    expect(bt('browser-eval.js', T, "document.getElementById('out').textContent") === 'cartão clicado', 'card link not clicked');
+  });
+
+  await check('find lists the other matches and scopes with --in', () => {
+    const all = JSON.parse(bt('browser-find.js', T, 'button', 'Assinar'));
+    expect(all.others?.length >= 1, JSON.stringify(all));
+    const form = refOf(bt('browser-snap.js', T), /form "Assinatura"/);
+    const inForm = JSON.parse(bt('browser-find.js', T, `--in=${form}`, 'button', 'Assinar'));
+    expect(inForm.ref && !inForm.others, JSON.stringify(inForm));
+    bt('browser-click.js', T, inForm.ref);
+    expect(/button "Assinado"/.test(bt('browser-snap.js', T, form)), 'the form button was not the one clicked');
+  });
+
+  await check('autocomplete rows without a role get refs (clickable)', () => {
+    bt('browser-nav.js', T, `${BASE}/index.html`);
+    const s0 = bt('browser-snap.js', T);
+    bt('browser-fill.js', T, refOf(s0, /textbox "Empresa"/), 'va');
+    const hit = JSON.parse(bt('browser-find.js', T, 'clickable', 'VALE S.A.'));
+    bt('browser-click.js', T, hit.ref);
+    expect(bt('browser-eval.js', T, "document.getElementById('empresa').value") === 'VALE S.A.', 'suggestion not picked');
+  });
+
+  await check('table rows keep empty cells in place; nameless links show a hint', () => {
+    const s = bt('browser-snap.js', T);
+    expect(/row \[e\d+\]: 2 \| 120\.125 \| · \| 125\.300/.test(s), s.split('\n').filter(l => /row/.test(l)).join('\n'));
+    expect(/link \(#btnPesquisar\) \[e\d+\]/.test(s), 'no hint on the icon link');
+  });
+
+  await check('fill on a collapsed field names the section to open', () => {
+    const err = btFail('browser-fill.js', T, '#dataIni', '01/01/2026');
+    expect(/inside details#filtros/.test(err || ''), err);
+  });
+
+  await check('wait --new ignores rows that were already there', () => {
+    const s = bt('browser-snap.js', T);
+    bt('browser-click.js', T, refOf(s, /button "Buscar AJAX"/));
+    const r = bt('browser-wait.js', T, '--new=#res td');
+    expect(/ready after (\d+)ms/.test(r) && +r.match(/(\d+)ms/)[1] >= 300, r);
+    expect(/novo resultado/.test(bt('browser-eval.js', T, "document.getElementById('res').innerText")), 'rows not replaced');
+  });
+
+  await check('a target below a sticky header after scrolling is not reported covered', () => {
+    bt('browser-nav.js', T, `${BASE}/index.html`);
+    bt('browser-scroll.js', T, '900');
+    const s = bt('browser-snap.js', T);
+    const r = bt('browser-click.js', T, refOf(s, /button "Assinar"/));
+    expect(/clicked/.test(r), r);
+  });
+
   await check('stale ref after navigation says so', () => {
     bt('browser-nav.js', T, `${BASE}/index.html`);
     const err = btFail('browser-click.js', T, 'e999');

@@ -8,9 +8,9 @@
 //   sleep(ms)
 //
 // page methods, each one daemon command (refs come from page.snap / page.find):
-//   goto(url) · url() · snap({all, max, root}) · find(role, name) → ref
+//   goto(url) · url() · snap({all, max, root}) · find(role, name, withinRef) → ref · findAll(...) → {ref, others}
 //   click(refOrSelector, {count, button, force}) · fill(ref, text) · type(text) · press(...keys)
-//   select(ref, ...values) · hover(ref) · scroll(pxOrRef) · wait({text, url, selector, gone, timeout})
+//   select(ref, ...values) · hover(ref) · scroll(pxOrRef) · wait({text, url, selector, fresh, gone, timeout})
 //   eval(expr) (page's world) · evalIsolated(expr) (DOM only, unseen by the page) · screenshot({path, full, ref}) · html(ref?) · close()
 // click returns what happened, e.g. "clicked e12; opened tab [AB12CD34] https://…";
 // page.popup() returns the page for the newest tab this one opened.
@@ -46,7 +46,8 @@ function makePage(targetId) {
     goto: (url) => call('nav', url),
     url: () => call('url'),
     snap: (o = {}) => call('snap', JSON.stringify(o)),
-    find: async (role, name) => (await json('find', role, name)).ref,
+    find: async (role, name, within) => (await json('find', role, name || '', within || '')).ref,
+    findAll: (role, name, within) => json('find', role, name || '', within || ''),
     click: (t, o = {}) => call('click', t, JSON.stringify(o)),
     clickAt: (x, y) => call('clickxy', x, y),
     fill: (t, text) => call('fill', t, text),
