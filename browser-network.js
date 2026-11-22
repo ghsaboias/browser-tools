@@ -12,7 +12,7 @@ try {
   await runDirect(targetId, 'nav', [url]);
   await new Promise(r => setTimeout(r, 1500));
 
-  const raw = await runDirect(targetId, 'eval', [`JSON.stringify(performance.getEntriesByType('resource').map(r => ({
+  const raw = await runDirect(targetId, 'evalmain', [`JSON.stringify(performance.getEntriesByType('resource').map(r => ({
     url: r.name, type: r.initiatorType, duration: Math.round(r.duration),
     size: r.transferSize || 0, start: Math.round(r.startTime),
     status: r.responseStatus || 0,
@@ -72,7 +72,10 @@ try {
 
   const total = entries.reduce((s, e) => s + e.size, 0);
   console.log(`\n📈 Total: ${entries.length} requests, ${fmtB(total)}\n`);
+} catch (e) {
+  console.error(e.message);
+  process.exitCode = 1;
 } finally {
   await closeTab(targetId);
-  process.exit(0);
+  process.exit(process.exitCode ?? 0);
 }

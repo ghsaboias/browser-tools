@@ -1,0 +1,18 @@
+<!doctype html><html><head><title>Sonda de automação</title></head><body>
+<p id="r">sem sinais</p>
+<script>
+// Signals a page can read: Runtime.enable (console serialisation of an Error's stack getter),
+// navigator.webdriver, mouse movement before clicks, typing cadence, globals leaked into the page.
+window.signals = { runtimeEnable: false, webdriver: navigator.webdriver, moves: 0, clicksWithoutMove: 0, keyGaps: [], leaked: [] };
+const e = new Error(); Object.defineProperty(e, 'stack', { get() { window.signals.runtimeEnable = true; return ''; } });
+setInterval(() => console.debug(e), 200);
+let lastMove = 0;
+addEventListener('mousemove', () => { signals.moves++; lastMove = performance.now(); });
+addEventListener('mousedown', () => { if (performance.now() - lastMove > 1000) signals.clicksWithoutMove++; });
+let lastKey = 0;
+addEventListener('keydown', () => { const n = performance.now(); if (lastKey) signals.keyGaps.push(Math.round(n - lastKey)); lastKey = n; });
+const base = new Set(Object.keys(window));
+setInterval(() => { signals.leaked = Object.keys(window).filter(k => !base.has(k) && k !== 'signals'); }, 500);
+</script>
+<input id="campo" aria-label="Campo"><button id="b">Botão</button>
+</body></html>

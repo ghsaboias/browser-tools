@@ -87,7 +87,10 @@ try {
   }
 
   console.log(`\n📈 JS Total: ${fmtB(jsTotals.total)}, ${fmtB(jsTotals.unused)} unused (${jsTotals.total ? ((jsTotals.unused/jsTotals.total)*100).toFixed(1) : 0}%)\n`);
+} catch (e) {
+  console.error(e.message);
+  process.exitCode = 1;
 } finally {
   await closeTab(targetId);
-  process.exit(0);
+  process.exit(process.exitCode ?? 0);
 }

@@ -1,14 +1,8 @@
 #!/usr/bin/env node
-import { run } from './lib/client.js';
+// Type into the focused element key by key, at a person's pace (long text: the first
+// characters typed, the rest inserted). To replace a field's contents use browser-fill.js.
+import { parseArgs, runAndPrint, usage } from './lib/cli.js';
 
-const args = process.argv.slice(2);
-const target = args.find(a => a.startsWith('-t='))?.slice(3) || null;
-const text = args.filter(a => !a.startsWith('-t=')).join(' ');
-
-if (!text) {
-  console.log('Usage: browser-type.js [-t=<tab>] <text>');
-  process.exit(1);
-}
-
-console.log(await run(target, 'type', [text]));
-process.exit(0);
+const { tab, rest } = parseArgs();
+if (!rest.length) usage('Usage: browser-type.js [-t=<tab>] <text>');
+await runAndPrint(tab, 'type', [rest.join(' ')]);

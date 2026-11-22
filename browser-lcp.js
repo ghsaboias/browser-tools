@@ -27,17 +27,17 @@ try {
   await runDirect(targetId, 'nav', [url]);
   await new Promise(r => setTimeout(r, 3000));
 
-  const lcpRaw = await runDirect(targetId, 'eval', ['JSON.stringify(window.__lcpEntries)']);
+  const lcpRaw = await runDirect(targetId, 'evalmain', ['JSON.stringify(window.__lcpEntries)']);
   const lcpData = JSON.parse(lcpRaw);
 
-  const navRaw = await runDirect(targetId, 'eval', [`JSON.stringify((() => {
+  const navRaw = await runDirect(targetId, 'evalmain', [`JSON.stringify((() => {
     const n = performance.getEntriesByType('navigation')[0];
     return n ? { ttfb: n.responseStart, download: n.responseEnd - n.responseStart,
       domInteractive: n.domInteractive, domContentLoaded: n.domContentLoadedEventEnd, load: n.loadEventEnd } : null;
   })())`]);
   const nav = JSON.parse(navRaw);
 
-  const blockingRaw = await runDirect(targetId, 'eval', [`JSON.stringify(
+  const blockingRaw = await runDirect(targetId, 'evalmain', [`JSON.stringify(
     performance.getEntriesByType('resource').filter(r => r.renderBlockingStatus === 'blocking')
       .map(r => ({ name: r.name.split('/').pop().split('?')[0].substring(0,40), type: r.initiatorType, duration: Math.round(r.duration) }))
   )`]);
@@ -83,7 +83,10 @@ try {
     console.log(`Total LCP:     ${final.time.toFixed(0)}ms`);
   }
   console.log();
+} catch (e) {
+  console.error(e.message);
+  process.exitCode = 1;
 } finally {
   await closeTab(targetId);
-  process.exit(0);
+  process.exit(process.exitCode ?? 0);
 }

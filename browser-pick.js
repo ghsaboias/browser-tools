@@ -12,7 +12,7 @@ if (!message) {
 }
 
 // Inject picker
-await run(target, 'eval', [`
+await run(target, 'evalmain', [`
   if (!window.pick) {
     window.pick = (message) => new Promise((resolve) => {
       const selections = [];
@@ -39,7 +39,7 @@ await run(target, 'eval', [`
   }
 `]);
 
-const result = await run(target, 'eval', [`JSON.stringify(await window.pick(${JSON.stringify(message)}))`]);
+const result = await run(target, 'evalmain', [`JSON.stringify(await window.pick(${JSON.stringify(message)}))`]);
 const parsed = JSON.parse(result);
 
 if (Array.isArray(parsed)) {

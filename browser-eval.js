@@ -1,29 +1,23 @@
 #!/usr/bin/env node
+// Evaluate JavaScript in the tab (awaits promises, returns by value).
+// Runs in an isolated world by default: same DOM, but the page cannot see the call or
+// hook what it touches. --main runs in the page's own world, for its JS globals.
+//
+//   browser-eval.js [-t=<tab>] [--main] "document.title"
 import { run } from './lib/client.js';
+import { parseArgs } from './lib/cli.js';
 
-const args = process.argv.slice(2);
-const target = args.find(a => a.startsWith('-t='))?.slice(3) || null;
-const code = args.filter(a => !a.startsWith('-t=')).join(' ');
-
+const { tab, flags, rest } = parseArgs();
+const code = rest.join(' ');
 if (!code) {
-  console.log('Usage: browser-eval.js [-t=<tab>] <code>');
-  console.log('  -t=  Tab query (URL/title substring or index). Default: last tab.');
-  console.log('\nExamples:');
-  console.log('  browser-eval.js "document.title"');
-  console.log('  browser-eval.js -t=github "document.title"');
+  console.log('Usage: browser-eval.js [-t=<tab>] [--main] <code>');
   process.exit(1);
 }
-
-let result;
 try {
-  result = await run(target, 'eval', [code]);
+  const result = await run(tab, 'eval', [code, JSON.stringify({ main: !!flags.main })]);
+  console.log(typeof result === 'object' && result !== null ? JSON.stringify(result, null, 2) : result);
+  process.exit(0);
 } catch (e) {
   console.error(e.message);
   process.exit(1);
 }
-if (typeof result === 'object' && result !== null) {
-  console.log(JSON.stringify(result, null, 2));
-} else {
-  console.log(result);
-}
-process.exit(0);

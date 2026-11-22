@@ -1,16 +1,18 @@
 #!/usr/bin/env node
-import { run } from './lib/client.js';
+// Click a ref from browser-snap, a CSS selector, or a point. The mouse travels there on a
+// curved path, the click is refused when something covers the target (a cookie banner, a
+// modal), and the output says what the page did: navigated, changed URL, opened a tab.
+//
+//   browser-click.js [-t=<tab>] e12 [--double] [--right] [--force]
+//   browser-click.js [-t=<tab>] "button[type=submit]"
+//   browser-click.js [-t=<tab>] <x> <y>
+import { parseArgs, runAndPrint, usage } from './lib/cli.js';
 
-const args = process.argv.slice(2);
-const target = args.find(a => a.startsWith('-t='))?.slice(3) || null;
-const rest = args.filter(a => !a.startsWith('-t='));
-
-if (rest.length === 0) {
-  console.log('Usage: browser-click.js [-t=<tab>] <selector>');
-  console.log('       browser-click.js [-t=<tab>] <x> <y>');
-  process.exit(1);
-}
-
-const cmd = rest.length >= 2 && !isNaN(rest[0]) ? 'clickxy' : 'click';
-console.log(await run(target, cmd, rest));
-process.exit(0);
+const { tab, flags, rest } = parseArgs();
+if (!rest.length) usage('Usage: browser-click.js [-t=<tab>] <ref|selector> [--double] [--right] [--force]\n       browser-click.js [-t=<tab>] <x> <y>');
+if (rest.length >= 2 && !isNaN(rest[0]) && !isNaN(rest[1])) await runAndPrint(tab, 'clickxy', rest.slice(0, 2));
+const o = {};
+if (flags.double) o.count = 2;
+if (flags.right) o.button = 'right';
+if (flags.force) o.force = true;
+await runAndPrint(tab, 'click', [rest.join(' '), JSON.stringify(o)]);

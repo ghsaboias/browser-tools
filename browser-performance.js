@@ -24,7 +24,7 @@ try {
   await runDirect(targetId, 'nav', [url]);
   await new Promise(r => setTimeout(r, 2000));
 
-  const raw = await runDirect(targetId, 'eval', [`JSON.stringify({
+  const raw = await runDirect(targetId, 'evalmain', [`JSON.stringify({
     ttfb: performance.getEntriesByType('navigation')[0]?.responseStart,
     fcp: window.__perf.fcp, lcp: window.__perf.lcp,
     cls: window.__perf.cls, longTasks: window.__perf.longTasks,
@@ -32,7 +32,7 @@ try {
   const m = JSON.parse(raw);
   const tbt = m.longTasks.reduce((s, d) => s + Math.max(0, d - 50), 0);
 
-  const res = await runDirect(targetId, 'eval', [`JSON.stringify({
+  const res = await runDirect(targetId, 'evalmain', [`JSON.stringify({
     total: performance.getEntriesByType('resource').reduce((s,e) => s + (e.transferSize||0), 0),
     js: performance.getEntriesByType('resource').filter(e => e.initiatorType==='script'||e.name.includes('.js')).reduce((s,e) => s + (e.transferSize||0), 0),
     css: performance.getEntriesByType('resource').filter(e => e.initiatorType==='css'||e.name.includes('.css')).reduce((s,e) => s + (e.transferSize||0), 0),
@@ -57,7 +57,10 @@ try {
   console.log(`CSS:     ${fmtB(r.css)}`);
   console.log(`Images:  ${fmtB(r.img)}`);
   console.log();
+} catch (e) {
+  console.error(e.message);
+  process.exitCode = 1;
 } finally {
   await closeTab(targetId);
-  process.exit(0);
+  process.exit(process.exitCode ?? 0);
 }

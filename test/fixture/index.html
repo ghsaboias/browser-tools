@@ -1,0 +1,25 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Fixture principal</title>
+<style>#modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center}
+#modal[hidden]{display:none} .box{background:#fff;padding:20px} body{min-height:2400px}</style></head><body>
+<header><nav><a href="/a">Início</a> <a href="/b">Política</a> <a href="/c">Economia</a> <a href="/d">Mundo</a></nav></header>
+<main>
+  <h1>Formulário de teste</h1>
+  <form onsubmit="event.preventDefault(); document.getElementById('out').textContent = 'enviado: ' + new FormData(this).get('email') + ' / ' + new FormData(this).get('uf') + ' / ' + document.getElementById('cpf').value">
+    <label>E-mail <input name="email" id="email" value="velho@x.com"></label>
+    <label>CPF <input id="cpf" oninput="let d=this.value.replace(/\D/g,'').slice(0,11);this.value=d.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/,'$1.$2.$3-$4')"></label>
+    <label>Estado <select name="uf"><option value="">--</option><option value="SP">São Paulo</option><option value="RJ">Rio de Janeiro</option></select></label>
+    <label><input type="checkbox" id="aceito"> Aceito os termos</label>
+    <button type="submit" id="enviar">Enviar</button>
+  </form>
+  <p id="out"></p>
+  <button id="abre-modal" onclick="document.getElementById('modal').hidden=false">Abrir aviso</button>
+  <a href="popup.html" target="_blank">Abrir em nova aba</a>
+  <button id="spa" onclick="history.pushState({}, '', '/rota-spa'); document.getElementById('out').textContent='rota trocada'">Trocar rota</button>
+  <button id="tarde" onclick="setTimeout(()=>{const p=document.createElement('p');p.textContent='Carregou depois';document.querySelector('main').append(p)},1200)">Carregar depois</button>
+  <iframe id="mesma" src="same.html" width="400" height="120"></iframe>
+  <iframe id="outra" width="400" height="160" style="margin-top:900px"></iframe>
+</main>
+<div id="modal" hidden role="dialog" aria-label="Aviso de cookies"><div class="box">Usamos cookies <button onclick="document.getElementById('modal').hidden=true">Aceitar</button></div></div>
+<footer><a href="/sobre">Sobre</a> <a href="/contato">Contato</a></footer>
+<script>document.getElementById("outra").src = "http://127.0.0.1:" + location.port + "/frame.html"</script>
+</body></html>
