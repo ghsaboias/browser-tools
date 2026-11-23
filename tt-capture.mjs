@@ -5,6 +5,7 @@
 // ou "Unable to extract secondary user ID"). Uso: tt-capture.mjs -t=<tab> <handle> <since YYYY-MM-DD> <out.json>
 import { run } from './lib/client.js';
 import { scrollFeed } from './lib/scroll.js';
+import { paceFrom } from './lib/human.js';
 import { ITEM_HOOK, readItems, refreshShown, clickRefresh } from './lib/tiktok.js';
 import fs from 'node:fs';
 const args = process.argv.slice(2);
@@ -15,7 +16,7 @@ const REFRESH_MAX = 3;
 await run(tab, 'injecton', [ITEM_HOOK]);
 await run(tab, 'nav', [`https://www.tiktok.com/@${handle}`]);
 // Como no ig-capture: a janela precisa estar visível (browser-window.js --tile).
-await sleep(5000);
+await paceFrom(5000);
 const sinceTs = Date.parse(since) / 1000;
 let last = 0, stale = 0, items = [], refreshes = 0, refreshedAt = -1;
 for (let i = 0; i < 300; i++) {
@@ -37,9 +38,10 @@ for (let i = 0; i < 300; i++) {
   if (page.hasMore === false) { console.log('\nfim do perfil'); break; }
   stale = items.length === last ? stale + 1 : 0; last = items.length;
   if (stale >= 12) { console.log('\nparou de carregar: a janela está visível?'); break; }
+  const t0 = Date.now();
   try { await scrollFeed(tab, 1800); }
   catch (e) { console.log(`\n${e.message}: a aba não voltou para a frente; nada foi gravado.`); process.exit(1); }
-  await sleep(2200 + Math.random() * 1200);
+  await paceFrom(2800, t0);
 }
 fs.writeFileSync(out, JSON.stringify(items, null, 1));
 console.log(`\n${handle}: ${items.length} itens gravados em ${out}`);

@@ -10,6 +10,7 @@
 // em <feed>.grade.json na primeira vez.
 import { run } from './lib/client.js';
 import { scrollFeed } from './lib/scroll.js';
+import { paceFrom } from './lib/human.js';
 import fs from 'node:fs';
 const args = process.argv.slice(2);
 const tab = args.find(a => a.startsWith('-t='))?.slice(3);
@@ -39,9 +40,10 @@ for (let i = 0; i < 400; i++) {
   if (lo > 0n && abaixo >= 6) break;
   stale = codes.length === last ? stale + 1 : 0; last = codes.length;
   if (stale >= 10) { console.log('\nfim da aba Reels (ou parou de carregar)'); break; }
+  const t0 = Date.now();
   try { await scrollFeed(tab, 1600); }
   catch (e) { console.log(`\n${e.message}: a aba não voltou para a frente; nada foi gravado.`); process.exit(1); }
-  await sleep(1800 + Math.random() * 900);
+  await paceFrom(2250, t0);
 }
 const faltam = codes.filter(c => !tem.has(c) && pk(c) > lo && (hi === null || pk(c) < hi));
 console.log(`\n${handle}: ${codes.length} reels listados, ${faltam.length} na janela e fora do feed.json`);
@@ -58,7 +60,7 @@ for (const [i, c] of faltam.entries()) {
   if (it.erro) { erros.push(`${c}: ${it.erro}`); if (it.erro === 429 || it.erro === 401) { console.log(`\nInstagram respondeu ${it.erro}: parando`); break; } }
   else novos.push(it);
   process.stdout.write(`\r${handle}: ${i + 1}/${faltam.length} reels pedidos, ${erros.length} erros   `);
-  await sleep(1500 + Math.random() * 1000);
+  await paceFrom(2000);
 }
 const naJanela = novos.filter(p => p.taken_at.slice(0, 10) >= since && p.taken_at.slice(0, 10) <= until);
 if (!fs.existsSync(feedPath + '.grade.json')) fs.copyFileSync(feedPath, feedPath + '.grade.json');

@@ -4,6 +4,7 @@
 // até o post mais antigo passar de --since. Uso: ig-capture.mjs -t=<tab> <handle> <since YYYY-MM-DD> <out.json>
 import { run } from './lib/client.js';
 import { scrollFeed } from './lib/scroll.js';
+import { paceFrom } from './lib/human.js';
 import fs from 'node:fs';
 const args = process.argv.slice(2);
 const tab = args.find(a => a.startsWith('-t='))?.slice(3);
@@ -23,7 +24,7 @@ await run(tab, 'injecton', [HOOK]);
 await run(tab, 'nav', [`https://www.instagram.com/${handle}/`]);
 // A janela precisa estar visível (browser-window.js --tile): numa janela minimizada ou coberta o Brave não entrega o
 // evento de roda e o feed para de carregar; o scrollFeed então a restaura e a traz para a frente.
-await sleep(4000);
+await paceFrom(4000);
 let last = 0, stale = 0, items = [];
 for (let i = 0; i < 200; i++) {
   items = JSON.parse(await run(tab, 'eval', [SUM]));
@@ -34,9 +35,10 @@ for (let i = 0; i < 200; i++) {
   if (own.filter(p => p.taken_at < since).length >= 4) break;
   stale = items.length === last ? stale + 1 : 0; last = items.length;
   if (stale >= 12) { console.log('\nparou de carregar: a janela está visível?'); break; }
+  const t0 = Date.now();
   try { await scrollFeed(tab, 1800); }
   catch (e) { console.log(`\n${e.message}: a aba não voltou para a frente; nada foi gravado.`); process.exit(1); }
-  await sleep(2200 + Math.random() * 1200);
+  await paceFrom(2800, t0);
 }
 fs.writeFileSync(out, JSON.stringify(items, null, 1));
 console.log(`\n${handle}: ${items.length} itens gravados em ${out}`);
